@@ -1,26 +1,163 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --background: #0f0f14;
+  --surface: #1a1a24;
+  --surface-2: #22222e;
+  --border: #2a2a3a;
+  --accent: #6366f1;
+  --accent-light: #818cf8;
+  --text: #e2e2f0;
+  --text-muted: #8888aa;
+  --foreground: #e2e2f0;
 }
 
 body {
   background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  color: var(--text);
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* FullCalendar custom styles */
+.fc {
+  --fc-border-color: var(--border);
+  --fc-button-bg-color: var(--accent);
+  --fc-button-border-color: var(--accent);
+  --fc-button-hover-bg-color: var(--accent-light);
+  --fc-button-hover-border-color: var(--accent-light);
+  --fc-button-active-bg-color: #4f46e5;
+  --fc-today-bg-color: rgba(99, 102, 241, 0.08);
+  --fc-event-bg-color: var(--accent);
+  --fc-event-border-color: var(--accent);
+  --fc-page-bg-color: transparent;
+  --fc-neutral-bg-color: var(--surface);
+  --fc-list-event-hover-bg-color: var(--surface-2);
+  --fc-non-business-color: rgba(0,0,0,0.2);
+  height: 100%;
+  font-size: 0.875rem;
+}
+
+.fc-theme-standard td,
+.fc-theme-standard th,
+.fc-theme-standard .fc-scrollgrid {
+  border-color: var(--border) !important;
+}
+
+.fc-col-header-cell-cushion,
+.fc-daygrid-day-number,
+.fc-timegrid-slot-label-cushion,
+.fc-list-event-title a,
+.fc-list-day-text,
+.fc-list-day-side-text {
+  color: var(--text) !important;
+  text-decoration: none !important;
+}
+
+.fc-daygrid-day-number:hover {
+  background: var(--surface-2);
+  border-radius: 50%;
+}
+
+.fc-button {
+  font-size: 0.8rem !important;
+  padding: 0.35rem 0.75rem !important;
+  border-radius: 0.5rem !important;
+  font-weight: 500 !important;
+  transition: all 0.15s ease !important;
+}
+
+.fc-toolbar-title {
+  color: var(--text) !important;
+  font-size: 1.2rem !important;
+  font-weight: 600 !important;
+}
+
+.fc-event {
+  border-radius: 6px !important;
+  padding: 2px 6px !important;
+  font-size: 0.78rem !important;
+  cursor: pointer !important;
+  transition: opacity 0.15s ease !important;
+  border: none !important;
+}
+
+.fc-event:hover {
+  opacity: 0.85 !important;
+}
+
+.fc-event-title {
+  font-weight: 500 !important;
+}
+
+.fc-daygrid-event-dot {
+  border-color: var(--accent) !important;
+}
+
+.fc-col-header-cell {
+  background: var(--surface) !important;
+}
+
+.fc-timegrid-slot {
+  height: 40px !important;
+}
+
+.fc-scrollgrid-sync-table {
+  height: 100%;
+}
+
+.fc-list-table {
+  font-size: 0.875rem;
+}
+
+.fc-list-event-title {
+  font-weight: 500;
+}
+
+.fc-daygrid-more-link {
+  color: var(--accent-light) !important;
+  font-size: 0.75rem !important;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+
+/* Modal */
+.modal-overlay {
+  animation: fadeIn 0.15s ease;
+}
+.modal-content {
+  animation: slideUp 0.2s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(12px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* Checkbox custom */
+input[type="checkbox"] {
+  accent-color: var(--accent);
+}
+
+/* Print / PDF export */
+@media print {
+  body { background: white !important; color: black !important; overflow: visible !important; height: auto !important; }
+  .print\:hidden { display: none !important; }
+  aside { display: none !important; }
+  .fc { color: black !important; --fc-border-color: #ccc !important; --fc-today-bg-color: #f0f0ff !important; }
+  .fc-event { background: #6366f1 !important; color: white !important; }
+  .fc-col-header-cell-cushion, .fc-daygrid-day-number { color: black !important; }
+  .fc-toolbar-title { color: black !important; }
+  .fc button { display: none !important; }
+  .fc-toolbar-chunk:first-child button, .fc-toolbar-chunk:last-child button { display: none !important; }
 }
