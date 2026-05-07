@@ -8,7 +8,10 @@ export default function QuickNotes() {
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
-    fetch("/api/quicknotes").then((r) => r.json()).then((d) => setContent(d.content ?? ""));
+    fetch("/api/quicknotes")
+      .then((r) => r.ok ? r.json() : null)
+      .then((d) => { if (d) setContent(d.content ?? ""); })
+      .catch(() => {});
   }, []);
 
   const handleChange = (val: string) => {
