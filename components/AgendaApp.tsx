@@ -323,12 +323,31 @@ export default function AgendaApp() {
                 if (ev) setSelectedEvent(ev);
               }}
               select={(arg: DateSelectArg) => setNewEventDate({ start: arg.startStr, end: arg.endStr, allDay: arg.allDay })}
+              dateClick={(arg) => {
+                const start = arg.dateStr;
+                const end = arg.dateStr;
+                setNewEventDate({ start, end, allDay: true });
+              }}
               eventDrop={handleEventDrop}
               eventResize={handleEventResize}
             />
           </div>
         </div>
       </div>
+
+      {/* Floating add button — mobile only */}
+      <button
+        className="fixed bottom-6 right-6 z-50 flex sm:hidden items-center justify-center w-14 h-14 rounded-full shadow-lg text-white text-2xl"
+        style={{ background: "var(--accent)" }}
+        onClick={() => {
+          const now = new Date();
+          const start = now.toISOString().slice(0, 10);
+          setNewEventDate({ start, end: start, allDay: true });
+        }}
+        aria-label="Novo evento"
+      >
+        +
+      </button>
 
       {selectedEvent && <EventModal event={selectedEvent} onClose={() => setSelectedEvent(null)} onRefresh={fetchEvents} />}
       {newEventDate && (
