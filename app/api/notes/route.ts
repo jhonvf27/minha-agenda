@@ -13,16 +13,20 @@ export async function GET(req: Request) {
 
 export async function PUT(req: Request) {
   const body = await req.json();
-  const { eventId, content, checklist, color } = body;
+  const { eventId, content, checklist, color, attachments } = body;
   if (!eventId) return NextResponse.json({ error: "eventId required" }, { status: 400 });
 
   const note = await prisma.eventNote.upsert({
     where: { eventId },
-    update: { content, checklist: JSON.stringify(checklist), color },
-    create: { eventId, content, checklist: JSON.stringify(checklist), color },
+    update: { content, checklist: JSON.stringify(checklist), color, attachments: JSON.stringify(attachments ?? []) },
+    create: { eventId, content, checklist: JSON.stringify(checklist), color, attachments: JSON.stringify(attachments ?? []) },
   });
 
-  return NextResponse.json({ ...note, checklist: JSON.parse(note.checklist) });
+  return NextResponse.json({
+    ...note,
+    checklist: JSON.parse(note.checklist),
+    attachments: JSON.parse(note.attachments),
+  });
 }
 
 export async function DELETE(req: Request) {

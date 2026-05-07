@@ -5,6 +5,17 @@ import { ptBR } from "date-fns/locale";
 import type { CalendarEvent } from "./AgendaApp";
 
 type ChecklistItem = { id: string; text: string; done: boolean };
+type Attachment = { id: string; name: string; type: string; size: number; data: string };
+
+const MAX_FILE_BYTES = 5 * 1024 * 1024; // 5 MB
+
+function fileIcon(type: string) {
+  if (type.startsWith("image/")) return "🖼️";
+  if (type === "application/pdf") return "📄";
+  if (type.includes("word")) return "📝";
+  if (type.includes("sheet") || type.includes("excel")) return "📊";
+  return "📎";
+}
 
 const COLORS = [
   "#6366f1", "#ec4899", "#f59e0b", "#10b981", "#3b82f6",
@@ -23,11 +34,13 @@ export default function EventModal({
   const [note, setNote] = useState("");
   const [checklist, setChecklist] = useState<ChecklistItem[]>([]);
   const [color, setColor] = useState("#6366f1");
+  const [attachments, setAttachments] = useState<Attachment[]>([]);
   const [newItem, setNewItem] = useState("");
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [fileError, setFileError] = useState("");
 
   const loadNote = useCallback(async () => {
     const res = await fetch(`/api/notes?eventId=${event.id}`);
@@ -41,6 +54,7 @@ export default function EventModal({
             : JSON.parse(data.checklist || "[]")
         );
         setColor(data.color || "#6366f1");
+        setAttachments(Array.isArray(data.attachments) ? data.attachments : JSON.parse(data.attachments || "[]"));
       }
     }
   }, [event.id]);
@@ -62,7 +76,7 @@ export default function EventModal({
     await fetch("/api/notes", {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ eventId: event.id, content: note, checklist, color }),
+      body: JSON.stringify({ eventId: event.id, content: note, checklist, color, attachments }),
     });
     setSaving(false);
     setSaved(true);
@@ -86,6 +100,43 @@ export default function EventModal({
 
   const removeItem = (id: string) => {
     setChecklist((prev) => prev.filter((item) => item.id !== id));
+  };
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files ?? []);
+    setFileError("");
+    files.forEach((file) => {
+      if (file.size > MAX_FILE_BYTES) {
+        setFileError(`"${file.name}" excede o limite de 5 MB.`);
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = () => {
+        setAttachments((prev) => [
+          ...prev,
+          { id: Date.now().toString(), name: file.name, type: file.type, size: file.size, data: reader.result as string },
+        ]);
+      };
+      reader.readAsDataURL(file);
+    });
+    e.target.value = "";
+  };
+
+  const downloadAttachment = (att: Attachment) => {
+    const a = document.createElement("a");
+    a.href = att.data;
+    a.download = att.name;
+    a.click();
+  };
+
+  const removeAttachment = (id: string) => {
+    setAttachments((prev) => prev.filter((a) => a.id !== id));
+  };
+
+  const formatBytes = (bytes: number) => {
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
   };
 
   const formatDate = (dateStr?: string) => {
@@ -206,6 +257,64 @@ export default function EventModal({
                 color: "var(--text)",
               }}
             />
+          </div>
+
+          {/* Attachments */}
+          <div>
+            <label className="text-xs font-medium mb-2 flex items-center justify-between" style={{ color: "var(--text-muted)" }}>
+              <span>Anexos</span>
+              <label
+                className="cursor-pointer px-2 py-1 rounded-lg text-xs font-medium transition-colors hover:opacity-80"
+                style={{ background: "var(--accent)", color: "#fff" }}
+              >
+                + Adicionar arquivo
+                <input type="file" multiple className="hidden" onChange={handleFileUpload} />
+              </label>
+            </label>
+
+            {fileError && (
+              <p className="text-xs mb-2" style={{ color: "#ef4444" }}>{fileError}</p>
+            )}
+
+            {attachments.length === 0 ? (
+              <p className="text-xs italic" style={{ color: "var(--text-muted)" }}>Nenhum anexo ainda.</p>
+            ) : (
+              <div className="space-y-2">
+                {attachments.map((att) => (
+                  <div
+                    key={att.id}
+                    className="flex items-center gap-2 p-2 rounded-lg"
+                    style={{ background: "var(--surface-2)", border: "1px solid var(--border)" }}
+                  >
+                    <span className="text-lg shrink-0">{fileIcon(att.type)}</span>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-medium truncate" style={{ color: "var(--text)" }}>{att.name}</p>
+                      <p className="text-xs" style={{ color: "var(--text-muted)" }}>{formatBytes(att.size)}</p>
+                    </div>
+                    <button
+                      onClick={() => downloadAttachment(att)}
+                      className="p-1.5 rounded hover:bg-white/10 transition-colors shrink-0"
+                      style={{ color: "var(--accent)" }}
+                      title="Baixar"
+                    >
+                      <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                      </svg>
+                    </button>
+                    <button
+                      onClick={() => removeAttachment(att.id)}
+                      className="p-1.5 rounded hover:bg-red-500/20 transition-colors shrink-0"
+                      style={{ color: "#ef4444" }}
+                      title="Remover"
+                    >
+                      <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Checklist */}
