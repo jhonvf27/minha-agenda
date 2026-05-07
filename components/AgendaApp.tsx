@@ -64,7 +64,9 @@ export default function AgendaApp() {
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
   const [newEventDate, setNewEventDate] = useState<{ start: string; end: string; allDay: boolean } | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(() =>
+    typeof window !== "undefined" ? window.innerWidth >= 768 : true
+  );
   const [notifMinutes, setNotifMinutes] = useState(15);
   const [notifGranted, setNotifGranted] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
@@ -171,15 +173,21 @@ export default function AgendaApp() {
 
   return (
     <div className="flex h-screen overflow-hidden" style={{ background: "var(--background)" }}>
+      {/* Sidebar — drawer overlay on mobile, inline on desktop */}
       {sidebarOpen && (
-        <TodaySidebar
-          todayEvents={todayEvents}
-          allEvents={events}
-          holidays={holidays}
-          onEventClick={(e) => setSelectedEvent(e)}
-          onDateClick={handleDateClick}
-          onClose={() => setSidebarOpen(false)}
-        />
+        <>
+          <div className="fixed inset-0 z-30 bg-black/50 md:hidden" onClick={() => setSidebarOpen(false)} />
+          <div className="fixed inset-y-0 left-0 z-40 md:relative md:z-auto md:inset-auto">
+            <TodaySidebar
+              todayEvents={todayEvents}
+              allEvents={events}
+              holidays={holidays}
+              onEventClick={(e) => { setSelectedEvent(e); setSidebarOpen(window.innerWidth < 768 ? false : true); }}
+              onDateClick={(d) => { handleDateClick(d); setSidebarOpen(window.innerWidth < 768 ? false : true); }}
+              onClose={() => setSidebarOpen(false)}
+            />
+          </div>
+        </>
       )}
 
       <div className="flex flex-col flex-1 min-w-0">
@@ -205,7 +213,7 @@ export default function AgendaApp() {
           </div>
 
           {/* Search */}
-          <div className="flex-1 max-w-xs relative">
+          <div className="hidden sm:flex flex-1 max-w-xs relative">
             <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: "var(--text-muted)" }}
               fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -218,11 +226,11 @@ export default function AgendaApp() {
 
           <div className="flex items-center gap-2">
             {/* Weather */}
-            <WeatherWidget />
+            <span className="hidden sm:block"><WeatherWidget /></span>
 
             {/* AI */}
             <button onClick={() => setShowAI(true)}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-medium transition-colors hover:bg-white/5"
+              className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-medium transition-colors hover:bg-white/5"
               style={{ borderColor: "var(--border)", color: "var(--text-muted)" }}
               title="Assistente IA">
               ✨ IA
@@ -230,7 +238,7 @@ export default function AgendaApp() {
 
             {/* Export PDF */}
             <button onClick={exportPDF}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-medium transition-colors hover:bg-white/5"
+              className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-medium transition-colors hover:bg-white/5"
               style={{ borderColor: "var(--border)", color: "var(--text-muted)" }}
               title="Exportar PDF">
               📄 PDF
@@ -265,7 +273,7 @@ export default function AgendaApp() {
             </div>
 
             {/* Pomodoro */}
-            <PomodoroTimer eventTitle={nextTodayEvent?.title} />
+            <span className="hidden sm:block"><PomodoroTimer eventTitle={nextTodayEvent?.title} /></span>
 
             {/* Sync */}
             <button onClick={fetchEvents} disabled={loading} className="p-2 rounded-lg hover:bg-white/5">
